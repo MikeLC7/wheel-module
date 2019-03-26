@@ -1,4 +1,4 @@
-package com.xcdh.target.demo;
+package com.xcdh.target.lock.redlock;
 
 import org.redisson.Redisson;
 import org.redisson.api.RLock;
