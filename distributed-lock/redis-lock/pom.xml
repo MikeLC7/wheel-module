@@ -19,12 +19,16 @@
 	</properties>
 
 	<dependencies>
-		<!-- RedLock -->
+		<!-- RedLock begin -->
 		<dependency>
 			<groupId>org.redisson</groupId>
 			<artifactId>redisson</artifactId>
 			<version>3.3.2</version>
 		</dependency>
+		<!-- RedLock end -->
+
+
+
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
