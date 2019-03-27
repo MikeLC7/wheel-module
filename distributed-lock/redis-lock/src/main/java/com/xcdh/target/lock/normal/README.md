@@ -17,8 +17,8 @@ Lock主目录
 
 - utilDemoA：完整版示例
     - RedisLock：redisTemplate版本；
-- utilDemoB：精简版示例
-    - RedisTool：工具类；
+- utilDemoB：完整版示例
+    - RedisLockUtil：Jedis版本；
 
  
 
