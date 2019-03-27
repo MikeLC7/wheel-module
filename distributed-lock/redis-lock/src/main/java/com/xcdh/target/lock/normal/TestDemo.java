@@ -1,10 +1,8 @@
 package com.xcdh.target.lock.normal;
 
-import com.xcdh.target.lock.normal.utilDemoA.RedisDistributedLock;
+import com.xcdh.target.lock.normal.utilDemoA.RedisLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
-
-import javax.annotation.Resource;
 
 /**
  * Project: Wheel
@@ -20,12 +18,40 @@ public class TestDemo {
     @Autowired
     private RedisTemplate redisTemplate;
     @Autowired
-    RedisDistributedLock redisDistributedLock = new RedisDistributedLock(redisTemplate);
+    RedisLock redisDistributedLock = new RedisLock(redisTemplate);
 
-    public void lockMethod(){
+    public void lockDemo(){
         String demoKeyStr = "123123";
         redisDistributedLock.lock(demoKeyStr);
         redisDistributedLock.releaseLock(demoKeyStr);
     }
+
+    /**
+     * 伪代码
+     */
+    public void pseudoCode(){
+        /**
+         *
+         * DemoA
+         *
+         */
+        try {
+            //if !(LockUtil.lock(lockKeyStr)){
+            //     return; // or throw SomeException();
+            // }
+
+            // the business code
+
+        } catch (Exception e){
+
+        } finally {
+            /**
+             * release the lock
+             */
+            // LockUtil.releaseLock(lockKeyStr);
+        }
+    }
+
+
 
 }

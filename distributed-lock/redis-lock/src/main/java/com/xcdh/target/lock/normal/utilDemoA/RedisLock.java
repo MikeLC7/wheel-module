@@ -1,5 +1,6 @@
 package com.xcdh.target.lock.normal.utilDemoA;
 
+import com.xcdh.target.lock.normal.abstractClass.AbstractDistributedLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -24,9 +25,9 @@ import java.util.UUID;
  *
  * @date: 2019/3/26 19:14  
  **/
-public class RedisDistributedLock extends AbstractDistributedLock {
+public class RedisLock extends AbstractDistributedLock {
 
-    private final Logger logger = LoggerFactory.getLogger(RedisDistributedLock.class);
+    private final Logger logger = LoggerFactory.getLogger(RedisLock.class);
 
     private RedisTemplate<Object, Object> redisTemplate;
 
@@ -45,28 +46,13 @@ public class RedisDistributedLock extends AbstractDistributedLock {
         UNLOCK_LUA = sb.toString();
     }
 
-    public RedisDistributedLock(RedisTemplate<Object, Object> redisTemplate) {
+    public RedisLock(RedisTemplate<Object, Object> redisTemplate) {
         super();
         this.redisTemplate = redisTemplate;
     }
 
     @Override
-    public boolean lock(String key, long expire, int retryTimes, long sleepMillis) {
-        boolean result = setRedis(key, expire);
-        // 如果获取锁失败，按照传入的重试次数进行重试
-        while((!result) && retryTimes-- > 0){
-            try {
-                logger.debug("lock failed, retrying..." + retryTimes);
-                Thread.sleep(sleepMillis);
-            } catch (InterruptedException e) {
-                return false;
-            }
-            result = setRedis(key, expire);
-        }
-        return result;
-    }
-
-    private boolean setRedis(String key, long expire) {
+    public boolean setRedis(String key, long expire) {
         try {
             String result = redisTemplate.execute(new RedisCallback<String>() {
                 @Override
