@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
  **/
 public abstract class AbstractDistributedLock implements DistributedLock {
 
-    private final Logger logger = LoggerFactory.getLogger(RedisLock.class);
+    private final Logger logger = LoggerFactory.getLogger(AbstractDistributedLock.class);
 
     @Override
     public boolean lock(String key) {
