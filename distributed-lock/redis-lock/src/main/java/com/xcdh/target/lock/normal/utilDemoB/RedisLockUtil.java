@@ -1,6 +1,7 @@
 package com.xcdh.target.lock.normal.utilDemoB;
 
 import com.xcdh.target.lock.normal.abstractClass.AbstractDistributedLock;
+import org.springframework.util.StringUtils;
 import redis.clients.jedis.Jedis;
 
 import java.util.Collections;
@@ -41,6 +42,9 @@ public class RedisLockUtil extends AbstractDistributedLock {
 
     @Override
     public boolean releaseLock(String lockKey) {
+        if (StringUtils.isEmpty(lockToken.get())){
+            return true;
+        }
         String script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
         Object result = jedis.eval(script, Collections.singletonList(lockKey), Collections.singletonList(lockToken.get()));
         if (RELEASE_SUCCESS.equals(result)) {
