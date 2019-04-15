@@ -52,7 +52,7 @@ public class RedisLock extends AbstractDistributedLock {
     }
 
     @Override
-    public boolean setRedis(String key, long expire) {
+    public boolean setLock(String key, long expire) {
         try {
             String result = redisTemplate.execute(new RedisCallback<String>() {
                 @Override
