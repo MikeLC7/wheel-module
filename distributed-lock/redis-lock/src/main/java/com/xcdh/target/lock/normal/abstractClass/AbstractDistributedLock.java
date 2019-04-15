@@ -49,7 +49,7 @@ public abstract class AbstractDistributedLock implements DistributedLock {
 
     @Override
     public boolean lock(String key, long expire, int retryTimes, long sleepMillis) {
-        boolean result = setRedis(key, expire);
+        boolean result = setLock(key, expire);
         // 如果获取锁失败，按照传入的重试次数进行重试
         while((!result) && retryTimes-- > 0){
             try {
@@ -58,11 +58,11 @@ public abstract class AbstractDistributedLock implements DistributedLock {
             } catch (InterruptedException e) {
                 return false;
             }
-            result = setRedis(key, expire);
+            result = setLock(key, expire);
         }
         return result;
     }
 
-    public abstract boolean setRedis(String key, long expire) ;
+    public abstract boolean setLock(String key, long expire) ;
 
 }

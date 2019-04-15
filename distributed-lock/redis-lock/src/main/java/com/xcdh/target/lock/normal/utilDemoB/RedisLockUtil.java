@@ -28,7 +28,7 @@ public class RedisLockUtil extends AbstractDistributedLock {
     }
 
     @Override
-    public boolean setRedis(String lockKey, long expireTime) {
+    public boolean setLock(String lockKey, long expireTime) {
         String uuid = Thread.currentThread().getId() + "_" +UUID.randomUUID().toString().toLowerCase();
         lockToken.set(uuid);
 
