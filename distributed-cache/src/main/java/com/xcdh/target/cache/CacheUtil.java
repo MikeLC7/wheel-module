@@ -1,16 +1,22 @@
-package com.xcdh.target.cache;
+package com.biyao.ark.common.util.cache;
 
 
+import com.biyao.ark.common.exception.InternalServerException;
+import com.biyao.ark.common.exception.code.CommonCode;
+import com.biyao.ark.common.util.lock.RedisLockUtil;
+import com.biyao.ark.common.util.redis.RedisKey;
+import com.biyao.ark.common.util.redis.RedisUtil;
+import com.by.bimdb.model.BPipeline;
 import com.xcdh.target.lock.normal.constant.RedisKey;
-import com.xcdh.target.lock.normal.utilDemoB.RedisLockUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import redis.clients.jedis.Pipeline;
 
 import javax.annotation.Resource;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 
@@ -31,25 +37,13 @@ public class CacheUtil {
     private static final String MULTI_LOAD_LUA = "local existFlag = redis.call('EXISTS',KEYS[1]);" +
             "if (existFlag) then return then redis.call('set',KEYS[1]','','ex',ARGS[1],'NX');";
 
+    public static final long CACHE_LOAD_TIMEOUT = 2000;
+
+
     @Resource
     protected RedisUtil redisUtil;
     @Autowired
     private RedisLockUtil redisLockUtil;
-
-    /**
-     *
-     * @param key
-     * @return
-     */
-    public String get(String key) {
-        String result = null;
-        try {
-            result = this.redisUtil.get(key);
-        } catch (Exception e) {
-            logger.error("CacheUtil_get, key:" + key, e);
-        }
-        return result;
-    }
 
     /**
      * 获取string 缓存数据
@@ -151,12 +145,12 @@ public class CacheUtil {
             }
         } catch (Exception e) {
             logger.error("redis异常", e);
-            throw new RuntimeException("fail");
+            throw new RuntimeException(CommonCode.INTERNAL_SERVER_EXCEPTION);
         } finally {
             redisLockUtil.releaseLock(redisKey.getLoadLockKey());
         }
         logger.error("获取数据库锁失败");
-        throw new RuntimeException("fail");
+        throw new RuntimeException(CommonCode.INTERNAL_SERVER_EXCEPTION);
     }
 
     /**
@@ -167,6 +161,7 @@ public class CacheUtil {
      * 结果不为null的情况，则表示是第一个进行数据库操作的请求，可以依赖返回结果进行后续逻辑，
      * 但最好还会通过redis来进行逻辑，因为依赖返回结果，代码会变的太多
      *
+     * add：refreshKey功能仅限于多并发时结果的快速返回，因超时时间的差异故与主key作区分；
      * @param supplier
      * @param <T>
      * @throws Exception
@@ -205,12 +200,12 @@ public class CacheUtil {
             }
         } catch (Exception e) {
             logger.error("redis异常", e);
-            throw new RuntimeException();
+            throw new RuntimeException(CommonCode.INTERNAL_SERVER_EXCEPTION);
         } finally {
             redisLockUtil.releaseLock(redisKey.getLoadLockKey());
         }
         logger.error("获取数据库锁失败");
-        throw new RuntimeException("fail");
+        throw new RuntimeException(CommonCode.INTERNAL_SERVER_EXCEPTION);
     }
 
     public boolean exLock(RedisKey key) {
@@ -230,98 +225,6 @@ public class CacheUtil {
         return true;
     }
 
-/*
-    public <T> T cacheLockLoadForce(String lockKey, String checkKey, Supplier<T> supplier) {
-        try {
-            //这个循环次数应该斟酌一下 超时设置成5秒，超过10秒就不等了，直接异常
-            for (int i = 0; i < 100; i++) {
-                if (redisLockUtil.lock(lockKey, 5000)) {
-                    T result = supplier.get();
-                    return result;
-                } else {
-                    try {
-                        Thread.sleep(20);
-                    } catch (InterruptedException e) {
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.error("redis异常", e);
-            throw new RuntimeException("fail");
-        } finally {
-            redisLockUtil.releaseLock(lockKey);
-        }
 
-        logger.error("获取数据库锁失败");
-        throw new RuntimeException("fail");
-    }
-
-    public void cacheLockLoadMultiple(List<RedisKey> redisKeys, Consumer<List<Long>> consumer) {
-        //加锁失败的key
-        List<RedisKey> lockFailed = new ArrayList<>(redisKeys.size());
-        try {
-            List<Long> paramIds = new ArrayList<>(redisKeys.size());
-
-            for (int i = 0; i < redisKeys.size(); i++) {
-                RedisKey redisKey = redisKeys.get(i);
-                boolean hasKey = redisUtil.exists(redisKey.getKey());
-                if (hasKey) {
-                    continue;
-                } else {
-                    try {
-                        if (1 == redisUtil.setnx(redisKey.getLoadLockKey(), "1", 5000)) {
-                            hasKey = redisUtil.exists(redisKey.getKey());
-                            if (hasKey) {
-                                //加锁之后如果key已经存在，则放锁
-                                continue;
-                            } else {
-                                paramIds.add(redisKey.getId());
-                            }
-                        } else {
-                            lockFailed.add(redisKey);
-                        }
-                    } finally {
-                        redisUtil.del(redisKey.getLoadLockKey());
-                    }
-                }
-            }
-            if (paramIds.size() == 0) {
-                return;
-            }
-            consumer.accept(paramIds);
-            //只等1秒，拿不全直接redis写入空字符串返回(lua脚本)
-            int i = 0;
-            List<RedisKey> luaParams = new ArrayList<>(lockFailed.size());
-            for (; i < 50; i++) {
-                for (RedisKey redisKey : lockFailed) {
-                    boolean hasKey = redisUtil.exists(redisKey.getKey());
-                    if (!hasKey) {
-                        if (i != 49) {
-                            try {
-                                Thread.sleep(20);
-                                continue;
-                            } catch (InterruptedException e) {
-                            }
-                        } else {
-                            luaParams.add(redisKey);
-                        }
-                    }
-                }
-            }
-            if (luaParams.size() != 0) {
-                BPipeline bPipeline = redisUtil.pipeline();
-                Pipeline pipeline = bPipeline.pipeline();
-                for (RedisKey lua : luaParams) {
-                    pipeline.eval(MULTI_LOAD_LUA, Collections.singletonList(lua.getKey()), Collections.singletonList("10"));
-                }
-                bPipeline.submitAndReturn();
-            }
-        } catch (Exception e) {
-            logger.error("redis异常", e);
-            throw new RuntimeException("fail");
-        }
-    }
-
-*/
 
 }
