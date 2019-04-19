@@ -1,6 +1,5 @@
 package com.xcdh.target.lock.normal.abstractClass;
 
-import com.xcdh.target.lock.normal.utilDemoA.RedisLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
