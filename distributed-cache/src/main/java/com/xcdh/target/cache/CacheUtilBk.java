@@ -5,14 +5,13 @@ import com.xcdh.target.lock.normal.constant.RedisKey;
 import com.xcdh.target.lock.normal.utilDemoB.RedisLockUtil;
 import com.xcdh.target.redis.RedisUtil;
 import com.xcdh.target.util.CollectionUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Resource;
-import java.util.Collection;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -27,9 +26,9 @@ import java.util.function.Supplier;
  * @date: 2019/4/15 13:48
  **/
 @Component
-public class CacheUtil {
+public class CacheUtilBk {
 
-    private static Logger logger = LoggerFactory.getLogger(CacheUtil.class);
+    private static Logger logger = LoggerFactory.getLogger(CacheUtilBk.class);
 
     private static final String MULTI_LOAD_LUA = "local existFlag = redis.call('EXISTS',KEYS[1]);" +
             "if (existFlag) then return then redis.call('set',KEYS[1]','','ex',ARGS[1],'NX');";
@@ -58,10 +57,11 @@ public class CacheUtil {
         String result = null;
         try {
             result = this.redisUtil.get(key.getKey());
-            if (StringUtils.isBlank(result) && existsRefreshKey(key)){
+            if (StringUtils.isNotBlank(result) && EMPTY_STRING.equals(result)){
                 if (logger.isInfoEnabled()) {
                     logger.info("查询String命中Refresh：{}", JSONObject.toJSON(key));
                 }
+                return null;
             }
         } catch (Exception e) {
             logger.error("getStringFromCache, key:" + key.getKey(), e);
@@ -98,7 +98,7 @@ public class CacheUtil {
         Map<String, String> result = null;
         try {
             result = this.redisUtil.hgetAll(key.getKey());
-            if (CollectionUtil.isEmpty(result) && existsRefreshKey(key)){
+            if (!CollectionUtil.isEmpty(result) && !hasMapHit(result)){
                 if (logger.isInfoEnabled()) {
                     logger.info("查询Map命中Refresh：{}", JSONObject.toJSON(key));
                 }
@@ -107,6 +107,13 @@ public class CacheUtil {
             logger.error("getHashFromCache, key:" + key.getKey(), e);
         }
         return result;
+    }
+
+    boolean hasMapHit(Map<String, String> map) {
+        if (map.size() == 1 && map.containsKey(EMPTY_MAP)) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -140,8 +147,8 @@ public class CacheUtil {
             while (retryTime-- > 0){
                 if (redisLockUtil.lock(redisKey.getLoadLockKey(), redisKey.getLoadLockExpireSeconds())) {
                     //
-                    if (existsKeyMulti(redisKey)) {
-                        this.delKeyMulti(redisKey);
+                    if (existsKey(redisKey)) {
+                        this.delKey(redisKey);
                     }
                     return supplier.get();
                 } else {
@@ -178,31 +185,20 @@ public class CacheUtil {
         try {
             int retryTime = 100;
             while (retryTime-- > 0){
-                // doubleCheck之锁外判断-快速返回()
-                /**
-                 * 注：
-                 * 1. 锁前的快速返回判断逻辑是Check key&refreshKey；
-                 * 2. 但是外部调用前已经判断过key，此处仅判断refreshKey即可；
-                 * 3. 结论：为了方便理解，此处做冗余判断，跟锁内判断保持一致；
-                 */
-                if (existsKeyMulti(redisKey)) {
+                // doubleCheck之锁外判断-快速返回
+                if (existsKey(redisKey)) {
                     return null;
                 }
                 if (redisLockUtil.lock(redisKey.getLoadLockKey(), redisKey.getLoadLockExpireSeconds())) {
                     // doubleCheck之锁外判断-快速返回
-                    if (existsKeyMulti(redisKey)) {
+                    if (existsKey(redisKey)) {
                         return null;
                     }
                     // 执行自定义方法
-                    result = supplier.get();
-                    // 处理缓存穿透
-                    if (result == null || (result instanceof Collection && ((Collection) result).size() < 1)) {
-                        redisUtil.setex(redisKey.getRefreshLockKey(), EMPTY_VALUE_FOR_REFRESH, redisKey.getRefreshLockExpireSeconds());
-                    }
-                    return result;
+                    return supplier.get();
                 } else {
                     // 如果超时或者key中已有值，则快速返回；
-                    if (existsKeyMulti(redisKey) || System.currentTimeMillis() - startTime >= timeOutMillSec) {
+                    if (existsKey(redisKey) || System.currentTimeMillis() - startTime >= timeOutMillSec) {
                         return null;
                     }
                     try {

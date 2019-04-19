@@ -1,5 +1,8 @@
 package com.xcdh.target.redis;
 
+import com.alibaba.fastjson.JSON;
+import com.xcdh.target.redis.model.BPipeline;
+import com.xcdh.target.redis.service.RedisSentinelService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -26,7 +29,8 @@ import java.util.stream.Collectors;
 public class RedisUtil {
     private final static Logger LOGGER = LoggerFactory.getLogger(RedisUtil.class);
 
-    private RedisSentinelPool redisService;
+    //private RedisSentinelPool redisService;
+    private RedisSentinelService redisService;
 
     public RedisUtil() {
     }
@@ -48,7 +52,7 @@ public class RedisUtil {
     public Long generateId(int businessId) {
         final String INCR_KEY = "cms:generate_id:";
         final int EXPIRE_SECONDS = 10;
-        Jedis jedis = redisService. getJedis();
+        Jedis jedis = redisService.getJedis();
         if (businessId > 91) {
             throw new RuntimeException("businessId不能大于91");
         }

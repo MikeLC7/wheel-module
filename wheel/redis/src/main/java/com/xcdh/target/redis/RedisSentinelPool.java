@@ -149,7 +149,7 @@ public class RedisSentinelPool {
     /**
      * @return 连接池中的Jedis实例
      */
-    private Jedis getRedis() {
+    public Jedis getRedis() {
         return jedisPool.getResource();
     }
 

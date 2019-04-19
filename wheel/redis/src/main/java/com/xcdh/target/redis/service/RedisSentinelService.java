@@ -1,5 +1,6 @@
 package com.xcdh.target.redis.service;
 
+import com.xcdh.target.redis.model.BPipeline;
 import redis.clients.jedis.*;
 import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.params.geo.GeoRadiusParam;
@@ -422,5 +423,6 @@ public interface RedisSentinelService {
 
     Jedis getJedis() throws JedisException;
 
+    BPipeline pipeline() throws JedisException;
 
 }
