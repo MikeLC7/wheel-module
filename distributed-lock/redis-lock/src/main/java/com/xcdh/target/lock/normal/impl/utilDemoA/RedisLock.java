@@ -1,4 +1,4 @@
-package com.xcdh.target.lock.normal.utilDemoA;
+package com.xcdh.target.lock.normal.impl.utilDemoA;
 
 import com.xcdh.target.lock.normal.abstractClass.AbstractDistributedLock;
 import org.slf4j.Logger;

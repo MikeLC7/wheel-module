@@ -1,4 +1,4 @@
-package com.xcdh.target.lock.normal.utilDemoB;
+package com.xcdh.target.lock.normal.impl.utilDemoB;
 
 import com.xcdh.target.lock.normal.abstractClass.AbstractDistributedLock;
 import org.springframework.util.StringUtils;

@@ -1,6 +1,7 @@
 package com.xcdh.target.redis.service;
 
 import com.xcdh.target.redis.config.RedisConfig;
+import com.xcdh.target.redis.model.BPipeline;
 import redis.clients.jedis.*;
 import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.jedis.params.geo.GeoRadiusParam;
@@ -9,11 +10,7 @@ import redis.clients.jedis.params.sortedset.ZIncrByParams;
 
 import java.util.*;
 
-/**
- * Created by MikeLC
- * Create Date: 2019/4/15 17:34
- * Description: ${DESCRIPTION}
- */
+//TODO：暂时不可用
 public class RedisSentinelServiceImpl implements RedisSentinelService {
 
 
@@ -37,12 +34,12 @@ public class RedisSentinelServiceImpl implements RedisSentinelService {
             this.appId = appId;
             this.clusterId = clusterId;
             RedisConfig config = new RedisConfig(maxWaitMillis, maxTotal, minIdle, maxIdle, timeOut);
-            this.jedisSentinelPool = JedisFactory.getJedisPoolRetry(getHost(sentinelHost), masterName, config, 5);
+            //this.jedisSentinelPool = JedisFactory.getJedisPoolRetry(getHost(sentinelHost), masterName, config, 5);
         } catch (Exception e) {
             throw e;
         }
 
-        ActionRecordSender.getInstance();
+        //ActionRecordSender.getInstance();
     }
 
     @Override
@@ -3672,7 +3669,7 @@ public class RedisSentinelServiceImpl implements RedisSentinelService {
             if (null == key || key.length == 0)
                 return;
 
-            ActionRecord.record(this.appId, this.clusterId, (System.currentTimeMillis() - start), start, exception, returnNull, cmd, key);
+            //ActionRecord.record(this.appId, this.clusterId, (System.currentTimeMillis() - start), start, exception, returnNull, cmd, key);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -3687,7 +3684,7 @@ public class RedisSentinelServiceImpl implements RedisSentinelService {
             for (int i = 0; i < key.length; i++)
                 nKeys[i] = new String(key[i]);
 
-            ActionRecord.record(this.appId, this.clusterId, (System.currentTimeMillis() - start), start, exception, returnNull, cmd, nKeys);
+            //ActionRecord.record(this.appId, this.clusterId, (System.currentTimeMillis() - start), start, exception, returnNull, cmd, nKeys);
         } catch (Exception e) {
             e.printStackTrace();
         }
