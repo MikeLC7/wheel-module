@@ -16,7 +16,7 @@
 
 	<properties>
 		<!-- 3rd party -->
-		<spring.version>4.3.0.RELEASE</spring.version>
+		<spring.version>5.2.20.RELEASE</spring.version>
 		<java.version>1.8</java.version>
 		<lang3.version>3.4</lang3.version>
 		<codec.version>1.10</codec.version>
